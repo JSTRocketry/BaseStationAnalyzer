@@ -42,6 +42,25 @@ def parseString(line):
     time = line[(timeIndex + 1):endLine-1]
     engineData.append([float(weight), float(time)])
 
+def getRocketThrust():
+    thrust = []
+    for i in engineData:
+        thrust.append([i[0]*9.81, i[1]])
+    return thrust
+
+def getArea():
+    #NOTE: time is x-axis, thrust/weight is y-axis
+    graphArea = []
+    midpoint = []
+    width = 0.0
+    height = 0.0
+    for i in range(0, len(engineData)-1):
+        midpoint.append([(engineData[i][0] + engineData[i+1][0])/2.0, (engineData[i][1] + engineData[i+1][1])/2.0])
+        height = midpoint[i][0] - engineData[i][0]
+        width = engineData[i+1][1] - engineData[i][1]
+        graphArea.append(height*width)
+    return graphArea
+
 def main():
     #open the file
     #read each line

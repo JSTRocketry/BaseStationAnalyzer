@@ -9,9 +9,6 @@ from matplotlib.backend_bases import key_press_handler
 from matplotlib.figure import Figure
 
 root = Tk()
-#root.withdraw()
-
-
 
 class WeightToThrustAnalyzer():
     BURN_TIME_TOLLERENCE = .03
@@ -58,10 +55,17 @@ class UserInterface():
         master.columnconfigure(0,weight=1)
         master.rowconfigure(1,weight=1)
         self.master = master
-        self.master.title("BaseStation")
+        self.master.title("Engine Test Analyzer")
         self.master.geometry('800x800')
         self.addModeButtons()
+        self.addCalculationTextBoxes()
         self.createGraph()
+        self.master.bind("<Escape>", self.end_fullscreen)
+
+    def end_fullscreen(self, event=None):
+        self.state = False
+        self.master.attributes("-zoomed", False)
+        sys.exit()
 
     def plotGraph(self):
         xData = []
@@ -81,7 +85,7 @@ class UserInterface():
         self.ax0.grid(color='r',linestyle='-', linewidth=2)
         #self.ax0.plot(np.max(np.random.rand(100,10)*10,axis=1),"r-")
         self.frame = Frame( self.master )
-        self.frame.grid(column=0,row=1,columnspan=3,sticky=N+S+E+W)
+        self.frame.grid(column=0,row=1,columnspan=4, rowspan=3, sticky=N+W+E+S)
         self.canvas = FigureCanvasTkAgg(self.f, master=self.frame)
         self.canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         self.canvas.show()
@@ -93,6 +97,15 @@ class UserInterface():
         self.openButton = Button(self.master, text='Open', command=self.handleOpen)
         self.openButton.grid(column=2,row=0)
 
+    def addCalculationTextBoxes(self):
+        self.propellantWeight = Label(self.master, text="Propellant Weight: N/A",font=("Arial Bold", 20))
+        self.burnTime = Label(self.master, text="Burn Time: N/A",font=("Arial Bold", 20))
+        self.maxThrust = Label(self.master, text="Max Thrust: N/A",font=("Arial Bold", 20))
+        self.totalImpulse = Label(self.master, text="Total Impulse: N/A",font=("Arial Bold", 20))
+        self.propellantWeight.grid(column = 0, row = 4,sticky = W)
+        self.burnTime.grid(column = 0, row = 4)
+        self.maxThrust.grid(column = 1, row = 4, sticky = W)
+        self.totalImpulse.grid(column = 3, row = 4)
 
     def parseString(self,line):
         weightIndex = line.index("@{")
@@ -115,6 +128,10 @@ class UserInterface():
         file = filedialog.askopenfilename()
         self.openAndParseFile(file)
         self.thrustData = WeightToThrustAnalyzer(self.weightData)
+        self.propellantWeight.configure(text="Propellant Weight: " + str(round(self.thrustData.getPropellantWeight(),3)) + " Kg")
+        self.burnTime.configure(text="Burn Time: " + str(round(self.thrustData.getBurnTime(),3)) + " sec")
+        self.totalImpulse.configure(text="Total Impulse: " + str(round(self.thrustData.getImpulse(),3)) + " N-S")
+        self.maxThrust.configure(text="Max Thrust: " + str(round(self.thrustData.getMaxThrust()[0],3)) + " N")
         print("Propellant Weight: " + str(self.thrustData.getPropellantWeight()))
         print("Max Thrust: " + str(self.thrustData.getMaxThrust()[0]) + " Newtons At Time: " + str(self.thrustData.getMaxThrust()[1]))
         print("Burn time: " + str(self.thrustData.getBurnTime()))
@@ -122,11 +139,8 @@ class UserInterface():
         self.plotGraph()
         print("Plotted")
 
-
-
-
-
 def main():
+    root.attributes("-zoomed", True)
     gui = UserInterface(root)
     root.mainloop()
 

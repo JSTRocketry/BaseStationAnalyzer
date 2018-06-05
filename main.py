@@ -1,8 +1,15 @@
-import tkinter as tk
 from tkinter import filedialog
+from tkinter import *
+import serial
+import matplotlib
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+# implement the default mpl key bindings
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
 
-root = tk.Tk()
-root.withdraw()
+root = Tk()
+#root.withdraw()
 
 
 
@@ -44,24 +51,84 @@ class WeightToThrustAnalyzer():
                 area += tempArea
         return area
 
-weightData = []
 
-def parseString(line):
-    weightIndex = line.index("@{")
-    timeIndex = line.index(";")
-    endLine = line.index("}@")
-    weight = line[(weightIndex + 2):timeIndex]
-    time = line[(timeIndex + 1):endLine-1]
-    return [float(weight), float(time)]
+class UserInterface():
+    weightData = []
+    def __init__(self, master):
+        master.columnconfigure(0,weight=1)
+        master.rowconfigure(1,weight=1)
+        self.master = master
+        self.master.title("BaseStation")
+        self.master.geometry('800x800')
+        self.addModeButtons()
+        self.createGraph()
+
+    def plotGraph(self):
+        xData = []
+        yData = []
+        for i in self.thrustData.engineData:
+            xData.append(i[1])
+            yData.append(i[0])
+        self.ax0.plot(xData,yData)
+        self.canvas.show()
+
+    def createGraph(self):
+        self.frame = Frame(self.master)
+        self.f = Figure( figsize=(10, 9), dpi=80 )
+        self.ax0 = self.f.add_axes( (0.05, .05, .90, .90), axisbg=(.75,.75,.75), frameon=False)
+        self.ax0.set_xlabel( 'Time (ms)' )
+        self.ax0.set_ylabel( 'Thrust (N)' )
+        self.ax0.grid(color='r',linestyle='-', linewidth=2)
+        #self.ax0.plot(np.max(np.random.rand(100,10)*10,axis=1),"r-")
+        self.frame = Frame( self.master )
+        self.frame.grid(column=0,row=1,columnspan=3,sticky=N+S+E+W)
+        self.canvas = FigureCanvasTkAgg(self.f, master=self.frame)
+        self.canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        self.canvas.show()
+        self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.frame )
+        #self.toolbar.grid(column = 0, row = 2, columnspan=2)
+        self.toolbar.update()
+
+    def addModeButtons(self):
+        self.openButton = Button(self.master, text='Open', command=self.handleOpen)
+        self.openButton.grid(column=2,row=0)
+
+
+    def parseString(self,line):
+        weightIndex = line.index("@{")
+        timeIndex = line.index(";")
+        endLine = line.index("}@")
+        weight = line[(weightIndex + 2):timeIndex]
+        time = line[(timeIndex + 1):endLine-1]
+        return [float(weight), float(time)]
+
+
+    def openAndParseFile(self,fileName):
+        f = open(fileName,'r')
+        for line in f:
+            #parse the line
+            #add to the block
+            self.weightData.append(self.parseString(line))
+        f.close()
+
+    def handleOpen(self):
+        file = filedialog.askopenfilename()
+        self.openAndParseFile(file)
+        self.thrustData = WeightToThrustAnalyzer(self.weightData)
+        print("Propellant Weight: " + str(self.thrustData.getPropellantWeight()))
+        print("Max Thrust: " + str(self.thrustData.getMaxThrust()[0]) + " Newtons At Time: " + str(self.thrustData.getMaxThrust()[1]))
+        print("Burn time: " + str(self.thrustData.getBurnTime()))
+        print("Total Impulse: " + str(self.thrustData.getImpulse()))
+        self.plotGraph()
+        print("Plotted")
+
+
+
+
 
 def main():
-    file = open(filedialog.askopenfilename(), 'r')
-    for line in file:
-        weightData.append(parseString(line))
-    thrustData = WeightToThrustAnalyzer(weightData)
-    print("Propellant Weight: " + str(thrustData.getPropellantWeight()))
-    print("Max Thrust: " + str(thrustData.getMaxThrust()[0]) + " Newtons At Time: " + str(thrustData.getMaxThrust()[1]))
-    print("Burn time: " + str(thrustData.getBurnTime()))
-    print("Total Impulse: " + str(thrustData.getImpulse()))
+    gui = UserInterface(root)
+    root.mainloop()
+
 
 main()

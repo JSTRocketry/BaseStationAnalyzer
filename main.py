@@ -1,10 +1,9 @@
 import tkinter as tk
 from tkinter import filedialog
 BURN_TIME_TOLLERENCE = .03
-
+GRAVITY = 9.81
 root = tk.Tk()
 root.withdraw()
-
 
 engineData = []
 propellantWeight = 0
@@ -16,15 +15,13 @@ impulse = 0
 def getMaxThrust():
     global maxThrust
     maxThrust = engineData[0]
-    #print(maxThrust)
     for i in engineData:
         if i[0] > maxThrust[0]:
             maxThrust = i
-            print("new max")
 
 def getPropellantWeight():
     global propellantWeight
-    propellantWeight = float(engineData[0][0]) - float(engineData[-1][0])
+    propellantWeight = abs(engineData[0][0] - engineData[-1][0])
 
 def getBurnTime():
     global burnTime
@@ -33,6 +30,18 @@ def getBurnTime():
             burnTime = i[1] - engineData[0][1]
             return
 
+def convertToThrust():
+    for i in engineData:
+        i[0] *= GRAVITY
+
+def getImpulse():
+    area = 0
+    for i in range(0,len(engineData)-1):
+        midpoint = (engineData[i + 1][0] - engineData[i][0])/2.0 + engineData[i][0]
+        tempArea = midpoint * (engineData[i+1][1] - engineData[i][1])/1000.0
+        if(tempArea > 0):
+            area += tempArea
+    return area
 
 def parseString(line):
     weightIndex = line.index("@{")
@@ -43,20 +52,16 @@ def parseString(line):
     engineData.append([float(weight), float(time)])
 
 def main():
-    #open the file
-    #read each line
-    #parse
-    #calculate
     file = open(filedialog.askopenfilename(), 'r')
     for line in file:
         parseString(line)
-    print(engineData)
-    getMaxThrust()
-    print(maxThrust)
     getPropellantWeight();
-    print(propellantWeight)
+    print("Propellant Weight: " + str(propellantWeight))
+    convertToThrust()
+    getMaxThrust()
+    print("Max Thrust: " + str(maxThrust[0]) + " Newtons At Time: " + str(maxThrust[1]))
     getBurnTime();
-    print(burnTime)
-    #print(engineData)
+    print("Burn time: " + str(burnTime))
+    print("Total Impulse: " + str(getImpulse()))
 
 main()

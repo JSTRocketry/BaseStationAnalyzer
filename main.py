@@ -59,7 +59,7 @@ class UserInterface():
         master.rowconfigure(1,weight=1)
         self.master = master
         self.master.title("BaseStation")
-        self.master.geometry('800x800')
+        self.master.geometry('800x600')
         self.addModeButtons()
         self.createGraph()
 
@@ -75,7 +75,7 @@ class UserInterface():
     def createGraph(self):
         self.frame = Frame(self.master)
         self.f = Figure( figsize=(10, 9), dpi=80 )
-        self.ax0 = self.f.add_axes( (0.05, .05, .90, .90), axisbg=(.75,.75,.75), frameon=False)
+        self.ax0 = self.f.add_axes( (0.05, .05, .90, .90), frameon=False)
         self.ax0.set_xlabel( 'Time (ms)' )
         self.ax0.set_ylabel( 'Thrust (N)' )
         self.ax0.grid(color='r',linestyle='-', linewidth=2)
